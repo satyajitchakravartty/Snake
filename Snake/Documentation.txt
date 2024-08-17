@@ -1,0 +1,8 @@
+Source: https://www.youtube.com/watch?v=baBq5GAL0_U
+Date created : 26 may 24
+Languages : html, css and Javascript (Mostly JS)
+Status : Completed
+Run : Open the HTML file in any browser
+
+1. Created a snake game from scratch
+2. Added comments for reference to it later
