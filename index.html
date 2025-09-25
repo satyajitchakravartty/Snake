@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Snake</title>
+	<link rel="stylesheet" href="snake.css">
+	<!-- Tailwind CDN -->
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script>
+		// Tailwind config with shadcn-inspired tokens using CSS variables
+		tailwind.config = {
+			darkMode: 'class',
+			theme: {
+				extend: {
+					colors: {
+						background: 'hsl(var(--background))',
+						foreground: 'hsl(var(--foreground))',
+						card: 'hsl(var(--card))',
+						cardForeground: 'hsl(var(--card-foreground))',
+						muted: 'hsl(var(--muted))',
+						mutedForeground: 'hsl(var(--muted-foreground))',
+						border: 'hsl(var(--border))',
+						primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' },
+						secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--secondary-foreground))' },
+						accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' }
+					},
+					boxShadow: {
+						card: '0 1px 2px 0 rgba(0,0,0,0.05), 0 1px 1px -1px rgba(0,0,0,0.1)'
+					},
+					borderRadius: {
+						lg: '0.5rem',
+						md: '0.375rem',
+						sm: '0.25rem'
+					}
+				}
+			}
+		}
+	</script>
+	<style>
+		:root {
+			--background: 0 0% 100%;
+			--foreground: 222.2 84% 4.9%;
+			--card: 0 0% 100%;
+			--card-foreground: 222.2 84% 4.9%;
+			--muted: 210 40% 96.1%;
+			--muted-foreground: 215.4 16.3% 46.9%;
+			--border: 214.3 31.8% 91.4%;
+			--primary: 222.2 47.4% 11.2%;
+			--primary-foreground: 210 40% 98%;
+			--secondary: 210 40% 96.1%;
+			--secondary-foreground: 222.2 47.4% 11.2%;
+			--accent: 210 40% 96.1%;
+			--accent-foreground: 222.2 47.4% 11.2%;
+		}
+		.dark {
+			--background: 222.2 84% 4.9%;
+			--foreground: 210 40% 98%;
+			--card: 222.2 84% 4.9%;
+			--card-foreground: 210 40% 98%;
+			--muted: 217.2 32.6% 17.5%;
+			--muted-foreground: 215 20.2% 65.1%;
+			--border: 217.2 32.6% 17.5%;
+			--primary: 210 40% 98%;
+			--primary-foreground: 222.2 47.4% 11.2%;
+			--secondary: 217.2 32.6% 17.5%;
+			--secondary-foreground: 210 40% 98%;
+			--accent: 217.2 32.6% 17.5%;
+			--accent-foreground: 210 40% 98%;
+		}
+	</style>
+	<script>
+		// Initialize theme from localStorage
+		(function() {
+			try {
+				var stored = localStorage.getItem('theme');
+				if (stored === 'dark') document.documentElement.classList.add('dark');
+			} catch (e) {}
+		})();
+	</script>
+</head>
+<body class="min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary">
+	<div class="container mx-auto p-4 md:p-8">
+		<header class="mb-2 md:mb-4 grid grid-cols-3 items-center">
+			<div class="hidden md:block"></div>
+			<h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-center">Snake</h1>
+			<div class="flex items-center justify-end gap-2">
+				<button id="menuOpen" class="inline-flex items-center justify-center rounded-md border border-border bg-secondary px-3 py-2 text-sm font-medium shadow-sm hover:bg-secondary/80 transition">Menu</button>
+				<label for="themeSelect" class="sr-only">Theme</label>
+				<select id="themeSelect" class="hidden md:inline-flex rounded-md border border-border bg-secondary px-2 py-2 text-sm shadow-sm">
+					<option value="emerald">Emerald</option>
+					<option value="indigo">Indigo</option>
+					<option value="rose">Rose</option>
+					<option value="amber">Amber</option>
+				</select>
+				<button id="muteToggle" class="inline-flex items-center justify-center rounded-md border border-border bg-secondary px-3 py-2 text-sm font-medium shadow-sm hover:bg-secondary/80 transition" aria-pressed="false" title="Mute sounds">
+					<span class="hidden md:inline">Mute</span>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="ml-2 h-4 w-4"><path d="M5 9v6h4l5 5V4L9 9H5zM19 12a3 3 0 0 0-2-2.82v5.64A3 3 0 0 0 19 12z"/></svg>
+				</button>
+				<button id="themeToggle" class="inline-flex items-center justify-center rounded-md border border-border bg-secondary px-3 py-2 text-sm font-medium shadow-sm hover:bg-secondary/80 transition">
+					<span class="hidden md:inline">Dark mode</span>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="ml-2 h-4 w-4">
+						<path d="M21.64 13a1 1 0 0 0-1.05-.14 8 8 0 1 1-9.45-9.45 1 1 0 0 0-.14-2A10 10 0 1 0 22 14a1 1 0 0 0-.36-1z"/>
+					</svg>
+				</button>
+			</div>
+		</header>
+		<p class="mb-4 text-xs md:text-sm text-mutedForeground text-center">
+			Use Arrow keys or swipe to move. Eat food to grow. Avoid walls and yourself. Pause with Space. Adjust speed as you like.
+		</p>
+		<main class="grid gap-4 md:gap-6">
+			<section class="rounded-lg border border-border bg-card shadow-card p-3 md:p-4">
+				<div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+					<div class="flex items-center gap-2">
+						<button id="btnPause" class="inline-flex items-center justify-center rounded-md border border-border bg-secondary px-3 py-2 text-sm font-medium shadow-sm hover:bg-secondary/80 transition">Pause</button>
+						<div class="flex items-center gap-2">
+							<label for="speedSlider" class="text-sm text-mutedForeground">Speed</label>
+							<input id="speedSlider" type="range" min="5" max="20" value="10" class="w-32 accent-current">
+						</div>
+					</div>
+					<div class="text-sm text-mutedForeground">High score: <span id="highScore" class="font-semibold">0</span></div>
+				</div>
+				<div class="flex items-center justify-between mb-3">
+					<div class="text-sm text-mutedForeground">Score: <span id="score" class="font-semibold">0</span></div>
+					<div class="text-sm text-mutedForeground">Speed: <span id="speed" class="font-semibold">10</span></div>
+				</div>
+				<div class="mx-auto max-w-fit relative" id="canvasWrap">
+					<canvas id="board" class="rounded-lg border border-border bg-black"></canvas>
+					<div id="overlay" class="pointer-events-none absolute inset-0"></div>
+					<div class="mt-4 grid grid-cols-3 gap-2 md:hidden">
+						<div></div>
+						<button id="btnUp" class="inline-flex items-center justify-center rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium shadow-sm active:scale-95">Up</button>
+						<div></div>
+						<button id="btnLeft" class="inline-flex items-center justify-center rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium shadow-sm active:scale-95">Left</button>
+						<button id="btnDown" class="inline-flex items-center justify-center rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium shadow-sm active:scale-95">Down</button>
+						<button id="btnRight" class="inline-flex items-center justify-center rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium shadow-sm active:scale-95">Right</button>
+					</div>
+				</div>
+				<div class="mt-4 flex justify-end gap-2">
+					<button id="btnRestart" class="inline-flex items-center justify-center rounded-md border border-border bg-accent px-4 py-2 text-sm font-medium shadow-sm hover:bg-accent/80 active:scale-95">Restart</button>
+				</div>
+			</section>
+		</main>
+	</div>
+
+	<!-- Game Menu -->
+	<div id="menu" class="fixed inset-0 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="menuTitle" aria-describedby="menuDesc">
+		<div id="menuOverlay" class="absolute inset-0 bg-black/60 opacity-0 transition-opacity"></div>
+		<div id="menuCard" class="relative w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-card opacity-0 translate-y-2 scale-95 transition-all duration-200" tabindex="-1">
+			<h2 id="menuTitle" class="text-lg font-semibold mb-1">Game Menu</h2>
+			<p id="menuDesc" class="text-sm text-mutedForeground mb-4">Set your name and view the leaderboard. Your best score is saved locally.</p>
+			<div class="mb-4 grid gap-2">
+				<label for="playerName" class="text-sm">Player name</label>
+				<input id="playerName" type="text" placeholder="Enter your name" class="rounded-md border border-border bg-card px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+			</div>
+			<div class="mb-3 flex items-center justify-between">
+				<h3 class="text-sm font-medium">Leaderboard</h3>
+				<button id="menuClear" class="text-xs rounded-md border border-border bg-secondary px-2 py-1 hover:bg-secondary/80">Clear</button>
+			</div>
+			<ul id="leaderboardList" class="mb-5 max-h-60 overflow-auto rounded-md border border-border p-3 text-sm text-mutedForeground">
+				<li class="text-xs">No scores yet. Play a game to set your record.</li>
+			</ul>
+			<div class="flex justify-end gap-2">
+				<button id="menuClose" class="inline-flex items-center justify-center rounded-md border border-border bg-secondary px-3 py-2 text-sm font-medium shadow-sm hover:bg-secondary/80">Close</button>
+				<button id="menuStart" class="inline-flex items-center justify-center rounded-md border border-border bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90">Start game</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Game Over Modal -->
+	<div id="modal" class="fixed inset-0 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc">
+		<div id="modalOverlay" class="absolute inset-0 bg-black/60 opacity-0 transition-opacity"></div>
+		<div id="modalCard" class="relative w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-card opacity-0 translate-y-2 scale-95 transition-all duration-200" tabindex="-1">
+			<div class="flex items-start gap-3 mb-3">
+				<div class="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5 text-foreground"><path d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm1 15h-2v-6h2zm0-8h-2V7h2z"/></svg>
+				</div>
+				<div>
+					<h2 id="modalTitle" class="text-lg font-semibold">Game over</h2>
+					<p id="modalDesc" class="text-sm text-mutedForeground">Your score: <span id="finalScore" class="font-medium">0</span>. High score: <span id="finalHighScore" class="font-medium">0</span></p>
+				</div>
+			</div>
+			<ul class="mb-4 list-disc list-inside text-xs md:text-sm text-mutedForeground space-y-1">
+				<li>Tip: Use Space to pause and plan your next moves.</li>
+				<li>Try increasing speed for a bigger challenge.</li>
+			</ul>
+			<div class="flex justify-end gap-2">
+				<button id="modalClose" class="inline-flex items-center justify-center rounded-md border border-border bg-secondary px-3 py-2 text-sm font-medium shadow-sm hover:bg-secondary/80">Close</button>
+				<button id="modalRestart" class="inline-flex items-center justify-center rounded-md border border-border bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90">Play again</button>
+			</div>
+		</div>
+	</div>
+
+	<script src="snake.js"></script>
+	<script>
+		// Theme toggle button
+		document.getElementById('themeToggle')?.addEventListener('click', function () {
+			var root = document.documentElement;
+			var isDark = root.classList.toggle('dark');
+			try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+		});
+	</script>
+</body>
+</html>
